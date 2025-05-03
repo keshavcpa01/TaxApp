@@ -1,0 +1,33 @@
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.pyc
+
+# Virtual environments
+venv/
+.env
+.env.*
+
+# FastAPI + Uvicorn logs
+*.log
+
+# VSCode settings
+.vscode/
+
+# macOS and Windows junk files
+.DS_Store
+Thumbs.db
+
+# React frontend
+frontend/node_modules/
+frontend/build/
+frontend/.env
+frontend/.env.*
+
+# Testing and coverage
+.coverage
+htmlcov/
+.cache/
+pytest_cache/
