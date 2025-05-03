@@ -32,6 +32,10 @@ def get_db():
 @app.get("/ping")
 def ping():
     return {"message": "pong"}
+@app.get("/")
+def root():
+    return {"message": "FastAPI backend is running!"}
+
 
 # Submit 1099-NEC route
 @app.post("/submit-1099/", response_model=schemas.TaxForm1099NEC)
