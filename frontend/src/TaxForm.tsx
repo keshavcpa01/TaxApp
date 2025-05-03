@@ -26,7 +26,7 @@ const TaxForm: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await axios.post('http://localhost:8000/submit-1099/', formData);
+      const response = await axios.post('https://taxapp1099.onrender.com/submit-1099/', formData);
       setMessage(`✅ Submitted! Record ID: ${response.data.id}`);
     } catch (error) {
       console.error(error);
