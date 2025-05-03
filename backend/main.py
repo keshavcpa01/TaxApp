@@ -14,7 +14,7 @@ app = FastAPI()
 # Allow frontend on localhost:3000
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:3000"],  # ✅ React port
+    allow_origins=["https://frontend-lyrv.onrender.com"],  # ✅ React port
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
