@@ -1,5 +1,7 @@
 fastapi==0.110.0
 uvicorn==0.27.1
 sqlalchemy==2.0.30
+psycopg2-binary
 pydantic
+requests
 python-dotenv
