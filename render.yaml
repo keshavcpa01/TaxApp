@@ -9,8 +9,6 @@ services:
         sync: false  # You'll set this manually in Render's dashboard
     plan: free
     autoDeploy: true
-    repo: keshavcpa01/TaxApp
-    branch: main
     rootDir: .
 
   - type: web
@@ -20,6 +18,4 @@ services:
     staticPublishPath: frontend/build
     plan: free
     autoDeploy: true
-    repo: keshavcpa01/TaxApp
-    branch: main
     rootDir: .
