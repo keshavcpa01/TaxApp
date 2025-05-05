@@ -6,13 +6,12 @@ services:
     startCommand: uvicorn backend.main:app --host 0.0.0.0 --port 10000
     envVars:
       - key: DATABASE_URL
-        sync: false  # You'll set this manually in Render dashboard
+        sync: false  # You'll set this manually in Render's dashboard
     plan: free
     autoDeploy: true
-    region: oregon
     repo: keshavcpa01/TaxApp
     branch: main
-    rootDir: .  # Keep root, app lives in `backend/`
+    rootDir: .
 
   - type: web
     name: taxapp-frontend
@@ -21,7 +20,6 @@ services:
     staticPublishPath: frontend/build
     plan: free
     autoDeploy: true
-    region: oregon
     repo: keshavcpa01/TaxApp
     branch: main
     rootDir: .
