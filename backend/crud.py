@@ -7,3 +7,5 @@ def create_1099nec(db: Session, form_data: schemas.TaxForm1099NECCreate):
     db.commit()
     db.refresh(new_form)
     return new_form
+def get_all_1099s(db: Session):
+    return db.query(models.TaxForm1099NEC).all()

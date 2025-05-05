@@ -2,6 +2,7 @@ print("🚀 FastAPI backend is running")
 
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from typing import List
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 
@@ -55,3 +56,6 @@ def submit_1099(form: schemas.TaxForm1099NECCreate, db: Session = Depends(get_db
         return crud.create_1099nec(db=db, form_data=form)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+@app.get("/submissions", response_model=List[schemas.TaxForm1099NEC])
+def get_all_submissions(db: Session = Depends(get_db)):
+    return crud.get_all_1099s(db)
