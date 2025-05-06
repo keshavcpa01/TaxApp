@@ -6,16 +6,14 @@ services:
     startCommand: uvicorn backend.main:app --host 0.0.0.0 --port 10000
     envVars:
       - key: DATABASE_URL
-        sync: false  # You'll set this manually in Render's dashboard
+        sync: false
     plan: free
     autoDeploy: true
     rootDir: .
 
-  - type: web
+  - type: static  # ✅ correct type
     name: taxapp-frontend
-    env: static
     buildCommand: cd frontend && npm install && npm run build
     staticPublishPath: frontend/build
-    plan: free
     autoDeploy: true
     rootDir: .
