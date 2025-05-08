@@ -45,8 +45,8 @@ const TaxForm: React.FC = () => {
     try {
       const response = await axios.post('https://taxapp1099.onrender.com/submit-1099/', formData);
       setMessage(`✅ Submitted! Record ID: ${response.data.id}`);
-    } catch (error) {
-      console.error(error);
+    } catch (error: any) {
+      console.error("Axios error:", error.response?.data || error.message);
       setMessage('❌ Error submitting form. Please check required fields.');
     }
   };

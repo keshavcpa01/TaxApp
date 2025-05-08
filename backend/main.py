@@ -1,11 +1,12 @@
 print("🚀 FastAPI backend is running")
 
 from fastapi import FastAPI, Depends, HTTPException
+from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from . import auth  # make sure this is imported
+from . import auth, security  # make sure this is imported
 
 from . import models, crud, schemas
 from .database import SessionLocal, engine, Base
@@ -78,3 +79,8 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
         raise HTTPException(status_code=400, detail="Incorrect username or password")
     token = security.create_access_token(data={"sub": user.username})
     return {"access_token": token, "token_type": "bearer"}
+
+@app.get("/users/me", response_model=schemas.UserOut)
+def read_users_me(current_user: models.User = Depends(auth.get_current_user)):
+    return current_user
+
