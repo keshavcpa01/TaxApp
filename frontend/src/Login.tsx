@@ -25,8 +25,17 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       const params = new URLSearchParams();
       params.append('username', data.username);
       params.append('password', data.password);
-
-      const response = await axios.post('https://taxapp1099.onrender.com/login', params);
+  
+      const response = await axios.post(
+        'https://taxapp1099.onrender.com/login',
+        params,
+        {
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+        }
+      );
+  
       const token = response.data.access_token;
       localStorage.setItem('token', token);
       onLogin(token);
@@ -34,7 +43,7 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       setError('Invalid username or password.');
     }
   };
-
+  
   return (
     <div className="flex items-center justify-center min-h-screen bg-gray-100">
       <div className="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
