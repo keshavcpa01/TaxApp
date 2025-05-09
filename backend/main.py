@@ -1,5 +1,3 @@
-print("🚀 FastAPI backend is running")
-
 from fastapi import FastAPI, Depends, HTTPException
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
@@ -84,3 +82,7 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
 def read_users_me(current_user: models.User = Depends(auth.get_current_user)):
     return current_user
 
+@app.get("/debug-tables")
+def debug_tables(db: Session = Depends(get_db)):
+    result = db.execute(text("SELECT table_name FROM information_schema.tables WHERE table_schema='public';"))
+    return {"tables": [row[0] for row in result]}

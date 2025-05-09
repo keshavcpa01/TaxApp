@@ -1,5 +1,8 @@
-from sqlalchemy import Column, Integer, String, Numeric
+from sqlalchemy import Column, Integer, String, Numeric, DateTime, ForeignKey
+from sqlalchemy.orm import relationship
+from datetime import datetime, timedelta
 from .database import Base
+import uuid
 
 class User(Base):
     __tablename__ = "users"
@@ -7,6 +10,20 @@ class User(Base):
     id = Column(Integer, primary_key=True, index=True)
     username = Column(String, unique=True, index=True, nullable=False)
     hashed_password = Column(String, nullable=False)
+
+    # Relationship to tokens
+    reset_tokens = relationship("PasswordResetToken", back_populates="user", cascade="all, delete-orphan")
+
+class PasswordResetToken(Base):
+    __tablename__ = "password_reset_tokens"
+
+    id = Column(Integer, primary_key=True, index=True)
+    token = Column(String, index=True, unique=True, default=lambda: str(uuid.uuid4()))
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False)
+    expires_at = Column(DateTime, nullable=False)
+
+    # Relationship to user
+    user = relationship("User", back_populates="reset_tokens")
 
 class TaxForm1099NEC(Base):
     __tablename__ = "taxform_1099nec"
