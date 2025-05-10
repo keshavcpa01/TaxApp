@@ -20,32 +20,33 @@ const Register: React.FC<RegisterProps> = ({ onRegistered }) => {
   const navigate = useNavigate();
 
   const onSubmit = async (data: FormData) => {
-    try {
-      setLoading(true);
-      await axios.post(`${process.env.REACT_APP_API_BASE_URL}/register`, data);
+  try {
+    setLoading(true);
+    await axios.post(`${process.env.REACT_APP_API_BASE_URL}/register`, data);
 
-      toast.success('✅ Registration successful! Redirecting...');
-      
-      if (onRegistered) {
-        onRegistered();
-      }
-
-      setTimeout(() => navigate('/login'), 1500);
-    } catch (err: any) {
-      if (axios.isAxiosError(err)) {
-        const msg = err.response?.data?.detail;
-        if (typeof msg === 'string') {
-          toast.error(`❌ ${msg}`);
-        } else {
-          toast.error('❌ Registration failed. Please try again.');
-        }
-      } else {
-        toast.error('❌ Unexpected error. Please try again.');
-      }
-    } finally {
-      setLoading(false);
+    toast.success('✅ Registration successful! Redirecting...');
+    
+    if (onRegistered) {
+      onRegistered();
     }
-  };
+
+    setTimeout(() => navigate('/login'), 1500); // ✅ this is the fix
+  } catch (err: any) {
+    if (axios.isAxiosError(err)) {
+      const msg = err.response?.data?.detail;
+      if (typeof msg === 'string') {
+        toast.error(`❌ ${msg}`);
+      } else {
+        toast.error('❌ Registration failed. Please try again.');
+      }
+    } else {
+      toast.error('❌ Unexpected error. Please try again.');
+    }
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   return (
     <div className="flex justify-center items-center min-h-screen bg-gray-100">
