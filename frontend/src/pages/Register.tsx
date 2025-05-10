@@ -31,8 +31,17 @@ const Register: React.FC<RegisterProps> = ({ onRegistered }) => {
       }
 
       setTimeout(() => navigate('/login'), 1500);
-    } catch (err) {
-      toast.error('❌ Registration failed. Username may already exist.');
+    } catch (err: any) {
+      if (axios.isAxiosError(err)) {
+        const msg = err.response?.data?.detail;
+        if (typeof msg === 'string') {
+          toast.error(`❌ ${msg}`);
+        } else {
+          toast.error('❌ Registration failed. Please try again.');
+        }
+      } else {
+        toast.error('❌ Unexpected error. Please try again.');
+      }
     } finally {
       setLoading(false);
     }
@@ -82,7 +91,7 @@ const Register: React.FC<RegisterProps> = ({ onRegistered }) => {
           <button
             type="submit"
             disabled={loading}
-            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50 border-4 border-red-500"
+            className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 disabled:opacity-50"
           >
             {loading ? 'Registering...' : 'Register'}
           </button>
