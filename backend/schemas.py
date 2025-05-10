@@ -11,12 +11,11 @@ class UserOut(BaseModel):
     username: str
 
     class Config:
-        orm_mode = True
+        from_attributes = True  # ✅ Updated for Pydantic v2
 
 class Token(BaseModel):
     access_token: str
     token_type: str
-
 
 class TaxForm1099NECCreate(BaseModel):
     # Payer info
@@ -46,4 +45,4 @@ class TaxForm1099NEC(TaxForm1099NECCreate):
     id: int
 
     class Config:
-        orm_mode = True
+        from_attributes = True  # ✅ Updated for Pydantic v2

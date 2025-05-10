@@ -22,7 +22,8 @@ const Register: React.FC<RegisterProps> = ({ onRegistered }) => {
   const onSubmit = async (data: FormData) => {
     try {
       setLoading(true);
-      await axios.post('https://taxapp1099.onrender.com/register', data);
+      await axios.post(`${process.env.REACT_APP_API_BASE_URL}/register`, data);
+
       toast.success('✅ Registration successful! Redirecting...');
       
       if (onRegistered) {

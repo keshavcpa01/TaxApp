@@ -1,3 +1,5 @@
+# .gitignore - optimized for fullstack FastAPI + React project
+
 # Python
 __pycache__/
 *.py[cod]
@@ -10,7 +12,7 @@ venv/
 .env
 .env.*
 
-# FastAPI + Uvicorn logs
+# FastAPI logs
 *.log
 
 # VSCode settings
@@ -26,8 +28,16 @@ frontend/build/
 frontend/.env
 frontend/.env.*
 
-# Testing and coverage
+# React test/coverage
 .coverage
 htmlcov/
 .cache/
 pytest_cache/
+
+# Optional: ignore SQLite or DB dumps
+*.sqlite3
+*.db
+backend/migrations/
+
+# Optional: Yarn (if not using it)
+yarn.lock
