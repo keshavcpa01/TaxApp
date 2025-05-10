@@ -19,7 +19,7 @@ app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://frontend-lyrv.onrender.com",  # Replace with your actual frontend
+        "https://taxapp-frontend.onrender.com",  # Replace with your actual frontend
         "http://localhost:3000"  # Optional: for local dev
     ],
     allow_credentials=True,
