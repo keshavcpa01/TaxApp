@@ -1,6 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { Routes, Route, Navigate } from 'react-router-dom';
-
+import React, { useState } from 'react';
+import { Routes, Route, Navigate, useNavigate } from 'react-router-dom';
 
 import Login from './pages/Login';
 import Register from './pages/Register';
@@ -10,9 +9,9 @@ import SubmissionsTable from './components/SubmissionsTable';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-
 const App: React.FC = () => {
   const [token, setToken] = useState<string | null>(localStorage.getItem('token'));
+  const navigate = useNavigate();
 
   const handleLogin = (newToken: string) => {
     localStorage.setItem('token', newToken);
@@ -22,13 +21,12 @@ const App: React.FC = () => {
   const handleLogout = () => {
     localStorage.removeItem('token');
     setToken(null);
-    window.location.href = '/';
+    window.location.href = '/#/login'; // ✅ Ensures redirect works in deployed HashRouter setup
   };
 
   return (
-   <>
+    <>
       <ToastContainer position="top-center" autoClose={3000} />
-
 
       <div className="min-h-screen bg-gray-100 p-4">
         <div className="max-w-3xl mx-auto bg-white shadow-md rounded-md p-6">
@@ -60,7 +58,7 @@ const App: React.FC = () => {
               }
             />
             <Route path="/login" element={<Login onLogin={handleLogin} />} />
-            <Route path="/register" element={<Register onRegistered={() => window.location.href = '/login'} />} />
+            <Route path="/register" element={<Register onRegistered={() => navigate('/login')} />} />
             <Route path="/forgot-password" element={<ForgotPassword />} />
             <Route path="*" element={<Navigate to="/" replace />} />
           </Routes>
