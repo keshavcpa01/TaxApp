@@ -30,7 +30,7 @@ const Register: React.FC<RegisterProps> = ({ onRegistered }) => {
       onRegistered();
     }
 
-    setTimeout(() => navigate('/login'), 1500); // ✅ this is the fix
+    setTimeout(() => (window.location.href = '/#/login'), 1500);  // ✅ this is the fix
   } catch (err: any) {
     if (axios.isAxiosError(err)) {
       const msg = err.response?.data?.detail;

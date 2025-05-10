@@ -15,7 +15,7 @@ const ForgotPassword: React.FC = () => {
   const onSubmit = async (data: FormData) => {
     try {
       setLoading(true);
-      await axios.post('https://taxapp1099.onrender.com/request-password-reset', data);
+      await axios.post(`${process.env.REACT_APP_API_BASE_URL}/request-password-reset`, data);
       toast.success('📧 Password reset link sent! Check your email.');
     } catch (err) {
       toast.error('❌ Failed to send reset link.');

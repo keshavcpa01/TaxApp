@@ -17,18 +17,29 @@ type TaxForm1099 = {
 
 const SubmissionsTable: React.FC<{ token: string }> = ({ token }) => {
   const [records, setRecords] = useState<TaxForm1099[]>([]);
+  const [error, setError] = useState('');
 
   useEffect(() => {
-    axios.get('https://taxapp1099.onrender.com/submissions', {
-      headers: { Authorization: `Bearer ${token}` }
-    })
-    .then(res => setRecords(res.data))
-    .catch(err => console.error('❌ Error fetching submissions:', err));
+    const fetchSubmissions = async () => {
+      try {
+        const res = await axios.get(`${process.env.REACT_APP_API_BASE_URL}/submissions`, {
+          headers: { Authorization: `Bearer ${token}` }
+        });
+        setRecords(res.data);
+      } catch (err: any) {
+        console.error('❌ Error fetching submissions:', err);
+        setError('Failed to load submissions. Please try again.');
+      }
+    };
+
+    fetchSubmissions();
   }, [token]);
 
   return (
     <div style={{ padding: '2rem' }}>
-      <h2>🧾 1099-NEC Submissions</h2>
+      <h2 className="text-xl font-bold mb-4">🧾 1099-NEC Submissions</h2>
+      {error && <p className="text-red-600 mb-2">{error}</p>}
+
       <table style={{ width: '100%', borderCollapse: 'collapse' }}>
         <thead>
           <tr>

@@ -26,14 +26,14 @@ const Login: React.FC<LoginProps> = ({ onLogin }) => {
       params.append('username', data.username);
       params.append('password', data.password);
 
-      const response = await axios.post('https://taxapp1099.onrender.com/login', params, {
+    const response = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/login`, params, {
         headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
       });
 
       const token = response.data.access_token;
       onLogin(token); // ✅ Updates parent state or localStorage
       toast.success('✅ Logged in!');
-      navigate('/');
+      window.location.href = '/#/';
     } catch (err) {
       toast.error('❌ Login failed. Please check credentials.');
     } finally {
