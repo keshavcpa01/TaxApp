@@ -1,0 +1,61 @@
+# ===============================================
+# 🔒 Backup: generate-env-example-20250510-210742.yml
+# -----------------------------------------------
+# This is a backup of the original GitHub Actions
+# workflow used for generating `.env.example` and
+# linting `.env`.
+
+# Created: 2025-05-10T21:07:42.794907
+# Active version: generate-env-example.yml
+# To restore: copy this file back to the original.
+# ===============================================
+
+name: Generate .env.example and Lint
+
+on:
+  push:
+    paths:
+      - 'backend/.env'
+  pull_request:
+    paths:
+      - 'backend/.env'
+
+jobs:
+  generate-env:
+    runs-on: ubuntu-latest
+
+    steps:
+    - name: Checkout repo
+      uses: actions/checkout@v3
+
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: '3.10'
+
+    - name: Install dependencies
+      run: pip install --upgrade pip python-dotenv
+
+    - name: Lint .env file
+      run: |
+        python -c "
+import os
+from dotenv import dotenv_values
+env = dotenv_values('backend/.env')
+required = ['DATABASE_URL', 'JWT_SECRET', 'JWT_ALGORITHM', 'ACCESS_TOKEN_EXPIRE_MINUTES', 'REFRESH_TOKEN_EXPIRE_DAYS']
+missing = [key for key in required if key not in env]
+if missing:
+    print(f'❌ Missing required keys: {missing}')
+    exit(1)
+print('✅ .env looks good!')
+        "
+
+    - name: Generate .env.example
+      run: python backend/generate_env_example.py
+
+    - name: Commit and push .env.example
+      id: commit
+      run: |
+        git config user.name "github-actions[bot]"
+        git config user.email "github-actions[bot]@users.noreply.github.com"
+        git add backend/.env.example
