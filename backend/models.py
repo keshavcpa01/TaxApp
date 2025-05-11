@@ -49,4 +49,4 @@ class TaxForm1099NEC(Base):
     state_income = Column(Numeric(10, 2), default=0.00)
 
     # ✅ Audit field
-    created_at = Column(DateTime, default=datetime.utcnow)
+    created_at = Column(DateTime, default=datetime.now)
