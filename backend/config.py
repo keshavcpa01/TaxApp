@@ -1,13 +1,12 @@
 import os
 from dotenv import load_dotenv
 
-# Load variables from .env file
 load_dotenv()
 
 class Settings:
     # JWT / Auth
     SECRET_KEY = os.getenv("SECRET_KEY", "super-secret-fallback")
-    ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")
+    JWT_ALGORITHM = os.getenv("JWT_ALGORITHM", "HS256")  # ✅ Fixed name and default
     ACCESS_TOKEN_EXPIRE_MINUTES = int(os.getenv("ACCESS_TOKEN_EXPIRE_MINUTES", "15"))
     REFRESH_TOKEN_EXPIRE_DAYS = int(os.getenv("REFRESH_TOKEN_EXPIRE_DAYS", "7"))
 
@@ -17,5 +16,8 @@ class Settings:
 
     # Database
     DATABASE_URL = os.getenv("DATABASE_URL")
+
+    class Config:
+        env_file = ".env"
 
 settings = Settings()
