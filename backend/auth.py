@@ -4,7 +4,8 @@ from jose import jwt, JWTError
 from sqlalchemy.orm import Session
 from backend import models, schemas, security
 from backend.database import get_db
-import json
+from sqlalchemy.exc import IntegrityError
+from fastapi import HTTPException, status
 
 # ✅ Dummy tokenUrl prevents unwanted form validation in GET routes
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
@@ -12,13 +13,18 @@ oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 def get_user_by_username(db: Session, username: str):
     return db.query(models.User).filter(models.User.username == username).first()
 
+
 def create_user(db: Session, user: schemas.UserCreate):
-    hashed_pw = security.hash_password(user.password)
-    new_user = models.User(username=user.username, hashed_password=hashed_pw)
-    db.add(new_user)
-    db.commit()
-    db.refresh(new_user)
-    return new_user
+    try:
+        hashed_pw = security.hash_password(user.password)
+        new_user = models.User(username=user.username, hashed_password=hashed_pw)
+        db.add(new_user)
+        db.commit()
+        db.refresh(new_user)
+        return new_user
+    except IntegrityError:  # ✅ must match the import
+        db.rollback()
+        raise HTTPException(status_code=400, detail="Username already exists")
 
 def authenticate_user(db: Session, username: str, password: str):
     user = get_user_by_username(db, username)
