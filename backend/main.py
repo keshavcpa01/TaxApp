@@ -6,6 +6,7 @@ from sqlalchemy.orm import Session
 from sqlalchemy import text
 from . import auth, security, models, crud, schemas
 from .database import SessionLocal, engine, Base
+from fastapi import Query
 from .email_utils import send_confirmation_email
 
 Base.metadata.create_all(bind=engine)
@@ -107,3 +108,8 @@ def read_users_me(current_user: models.User = Depends(auth.get_current_user)):
 def debug_tables(db: Session = Depends(get_db)):
     result = db.execute(text("SELECT table_name FROM information_schema.tables WHERE table_schema='public';"))
     return {"tables": [row[0] for row in result]}
+
+@app.get("/test-email")
+def test_email(to: str = Query(...)):
+    send_confirmation_email(to_email=to, payer_name="Test Payer", count=1)
+    return {"message": f"Email sent to {to}"}
