@@ -8,6 +8,10 @@ from . import auth, security, models, crud, schemas
 from .database import SessionLocal, engine, Base
 from fastapi import Query
 from .email_utils import send_confirmation_email
+from backend.models import Base
+from backend.database import engine
+
+Base.metadata.drop_all(bind=engine)
 
 Base.metadata.create_all(bind=engine)
 
