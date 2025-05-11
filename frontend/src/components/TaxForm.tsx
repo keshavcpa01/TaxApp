@@ -49,7 +49,28 @@ const TaxForm: React.FC = () => {
       return;
     }
 
-    const forms = data.recipients.map((r) => ({ ...r, ...data }));
+    const {
+      payer_name,
+      payer_tin,
+      payer_phone,
+      payer_address,
+      payer_city,
+      payer_state,
+      payer_zip,
+      payer_email,
+    } = data;
+
+    const forms = data.recipients.map((recipient) => ({
+      ...recipient,
+      payer_name,
+      payer_tin,
+      payer_phone,
+      payer_address,
+      payer_city,
+      payer_state,
+      payer_zip,
+      payer_email,
+    }));
 
     try {
       await axios.post(`${process.env.REACT_APP_API_BASE_URL}/submit-multiple-1099/`, forms, {
