@@ -1,0 +1,29 @@
+name: Safe Workflow Backup (No Commit)
+
+on:
+  schedule:
+    - cron: '0 3 * * 0' # Every Sunday at 3:00 AM UTC
+  workflow_dispatch:
+
+jobs:
+  backup-locally:
+    name: Run Safe Backup Script
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Run backup_workflow_safe.py (no commit)
+        run: |
+          python backup_workflow_safe.py
+
+      - name: Confirm Backup Folder
+        run: |
+          echo "✅ Listing .github/backups/"
+          ls .github/backups || echo "⚠️ No backups found."

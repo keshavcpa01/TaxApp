@@ -1,104 +1,125 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useForm, useFieldArray } from 'react-hook-form';
 import axios from 'axios';
+import InputMask from 'react-input-mask';
+import { TIN_MASK, PHONE_MASK, ZIP_MASK, DATE_MASK } from '../utils/masks';
+import { useNavigate } from 'react-router-dom';
+import { toast } from 'react-toastify';
+
+interface Recipient {
+  recipient_name: string;
+  recipient_tin: string;
+  recipient_phone: string;
+  recipient_address: string;
+  recipient_city: string;
+  recipient_state: string;
+  recipient_zip: string;
+  payment_date: string;
+  nonemployee_compensation: number;
+  federal_income_tax_withheld?: number;
+  state?: string;
+  state_id?: string;
+  state_income?: number;
+}
+
+interface FormData {
+  payer_name: string;
+  payer_tin: string;
+  payer_phone: string;
+  payer_address: string;
+  payer_city: string;
+  payer_state: string;
+  payer_zip: string;
+  payer_email?: string;
+  recipients: Recipient[];
+}
 
 const TaxForm: React.FC = () => {
-  const [formData, setFormData] = useState({
-    // Payer Info
-    payer_name: '',
-    payer_tin: '',
-    payer_address: '',
-    payer_city: '',
-    payer_state: '',
-    payer_zip: '',
-
-    // Recipient Info
-    recipient_name: '',
-    recipient_tin: '',
-    recipient_address: '',
-    recipient_city: '',
-    recipient_state: '',
-    recipient_zip: '',
-
-    // Compensation Info
-    nonemployee_compensation: 0,
-    federal_income_tax_withheld: 0,
-    state: '',
-    state_id: '',
-    state_income: 0,
+  const { register, handleSubmit, reset, control } = useForm<FormData>({
+    defaultValues: { recipients: [{}] as Recipient[] }
   });
 
-  const [message, setMessage] = useState('');
+  const { fields, append, remove } = useFieldArray({ control, name: 'recipients' });
+  const navigate = useNavigate();
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const { name, value } = e.target;
+  const onSubmit = async (data: FormData) => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      toast.error('Please log in.');
+      return;
+    }
 
-    setFormData((prevData) => ({
-      ...prevData,
-      [name]: ['nonemployee_compensation', 'federal_income_tax_withheld', 'state_income'].includes(name)
-        ? parseFloat(value)
-        : value,
-    }));
-  };
+    const forms = data.recipients.map((r) => ({ ...r, ...data }));
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setMessage('');
     try {
-      const token = localStorage.getItem('token');
-      const response = await axios.post(
-        `${process.env.REACT_APP_API_BASE_URL}/submit-1099/`,
-        formData,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
-
-      setMessage(`✅ Submitted! Record ID: ${response.data.id}`);
-    } catch (error: any) {
-      const msg = error?.response?.data?.detail || '❌ Error submitting form. Please check required fields.';
-      console.error('Axios error:', error.response || error.message);
-      setMessage(msg);
+      await axios.post(`${process.env.REACT_APP_API_BASE_URL}/submit-multiple-1099/`, forms, {
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      toast.success('✅ 1099s submitted!');
+      navigate('/confirmation');
+    } catch (err) {
+      console.error(err);
+      toast.error('❌ Submission failed. Please try again.');
     }
   };
 
   return (
-    <div style={{ maxWidth: '600px', margin: '0 auto' }}>
-      <h1 className="text-xl font-bold mb-4 text-center">📄 1099-NEC Submission Form</h1>
-      <form onSubmit={handleSubmit} className="space-y-2">
-        <h3 className="font-semibold">Payer Information</h3>
-        <input name="payer_name" placeholder="Payer Name" onChange={handleChange} required />
-        <input name="payer_tin" placeholder="Payer TIN" onChange={handleChange} required />
-        <input name="payer_address" placeholder="Payer Address" onChange={handleChange} required />
-        <input name="payer_city" placeholder="Payer City" onChange={handleChange} required />
-        <input name="payer_state" placeholder="Payer State" onChange={handleChange} required />
-        <input name="payer_zip" placeholder="Payer ZIP" onChange={handleChange} required />
+    <div className="p-4 max-w-4xl mx-auto">
+      <h2 className="text-xl font-bold mb-4">📄 Submit 1099-NEC for Multiple Recipients</h2>
+      <form onSubmit={handleSubmit(onSubmit)} className="grid gap-6">
+        <div>
+          <h3 className="font-semibold text-lg">Payer Info</h3>
+          <input placeholder="Name" {...register('payer_name', { required: true })} />
+          <InputMask mask={TIN_MASK} {...register('payer_tin', { required: true })}>
+            {(inputProps) => <input {...inputProps} placeholder="Payer TIN (123-45-6789)" />}
+          </InputMask>
+          <InputMask mask={PHONE_MASK} {...register('payer_phone')}>
+            {(inputProps) => <input {...inputProps} placeholder="Phone (123) 456-7890" />}
+          </InputMask>
+          <input placeholder="Email (for confirmation)" type="email" {...register('payer_email')} />
+          <input placeholder="Address" {...register('payer_address', { required: true })} />
+          <input placeholder="City" {...register('payer_city', { required: true })} />
+          <input placeholder="State" {...register('payer_state', { required: true })} />
+          <InputMask mask={ZIP_MASK} {...register('payer_zip', { required: true })}>
+            {(inputProps) => <input {...inputProps} placeholder="ZIP (5-digit)" />}
+          </InputMask>
+        </div>
 
-        <h3 className="font-semibold">Recipient Information</h3>
-        <input name="recipient_name" placeholder="Recipient Name" onChange={handleChange} required />
-        <input name="recipient_tin" placeholder="Recipient TIN" onChange={handleChange} required />
-        <input name="recipient_address" placeholder="Recipient Address" onChange={handleChange} required />
-        <input name="recipient_city" placeholder="Recipient City" onChange={handleChange} required />
-        <input name="recipient_state" placeholder="Recipient State" onChange={handleChange} required />
-        <input name="recipient_zip" placeholder="Recipient ZIP" onChange={handleChange} required />
+        <div>
+          <h3 className="font-semibold text-lg">Recipients</h3>
+          {fields.map((field, index) => (
+            <div key={field.id} className="border p-4 mb-4 rounded bg-gray-50">
+              <h4 className="font-semibold">Recipient #{index + 1}</h4>
+              <input placeholder="Name" {...register(`recipients.${index}.recipient_name`, { required: true })} />
+              <InputMask mask={TIN_MASK} {...register(`recipients.${index}.recipient_tin`, { required: true })}>
+                {(inputProps) => <input {...inputProps} placeholder="TIN" />}
+              </InputMask>
+              <InputMask mask={PHONE_MASK} {...register(`recipients.${index}.recipient_phone`)}>
+                {(inputProps) => <input {...inputProps} placeholder="Phone" />}
+              </InputMask>
+              <input placeholder="Address" {...register(`recipients.${index}.recipient_address`, { required: true })} />
+              <input placeholder="City" {...register(`recipients.${index}.recipient_city`, { required: true })} />
+              <input placeholder="State" {...register(`recipients.${index}.recipient_state`, { required: true })} />
+              <InputMask mask={ZIP_MASK} {...register(`recipients.${index}.recipient_zip`, { required: true })}>
+                {(inputProps) => <input {...inputProps} placeholder="ZIP" />}
+              </InputMask>
+              <InputMask mask={DATE_MASK} {...register(`recipients.${index}.payment_date`)}>
+                {(inputProps) => <input {...inputProps} placeholder="Payment Date" />}
+              </InputMask>
+              <input type="number" step="0.01" placeholder="Compensation" {...register(`recipients.${index}.nonemployee_compensation`, { required: true })} />
+              <input type="number" step="0.01" placeholder="Federal Tax Withheld" {...register(`recipients.${index}.federal_income_tax_withheld`)} />
+              <input placeholder="State" {...register(`recipients.${index}.state`)} />
+              <input placeholder="State ID" {...register(`recipients.${index}.state_id`)} />
+              <input type="number" step="0.01" placeholder="State Income" {...register(`recipients.${index}.state_income`)} />
 
-        <h3 className="font-semibold">Payment Information</h3>
-        <input name="nonemployee_compensation" type="number" placeholder="Box 1: Compensation" onChange={handleChange} required />
-        <input name="federal_income_tax_withheld" type="number" placeholder="Box 4: Fed Tax Withheld" onChange={handleChange} />
-        <input name="state" placeholder="Box 5: State" onChange={handleChange} />
-        <input name="state_id" placeholder="Box 6: State ID" onChange={handleChange} />
-        <input name="state_income" type="number" placeholder="Box 7: State Income" onChange={handleChange} />
+              <button type="button" className="text-red-600 underline mt-2" onClick={() => remove(index)}>Remove Recipient</button>
+            </div>
+          ))}
+          <button type="button" onClick={() => append({} as Recipient)} className="bg-gray-200 px-4 py-2 rounded">+ Add Recipient</button>
+        </div>
 
-        <br />
-        <button
-          type="submit"
-          className="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700"
-        >
-          Submit 1099
-        </button>
+        <button type="submit" className="bg-blue-600 text-white py-2 rounded">Submit All 1099s</button>
       </form>
-      {message && <p className="mt-4 text-center">{message}</p>}
     </div>
   );
 };

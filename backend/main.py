@@ -4,30 +4,25 @@ from fastapi.middleware.cors import CORSMiddleware
 from typing import List
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from . import auth, security  # make sure this is imported
-
-from . import models, crud, schemas
+from . import auth, security, models, crud, schemas
 from .database import SessionLocal, engine, Base
+from .email_utils import send_confirmation_email
 
-# Create tables on startup
 Base.metadata.create_all(bind=engine)
 
-# Initialize FastAPI
 app = FastAPI()
 
-# CORS: Allow frontend origin
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
-        "https://taxapp-frontend.onrender.com",  # Replace with your actual frontend
-        "http://localhost:3000"  # Optional: for local dev
+        "https://taxapp-frontend.onrender.com",
+        "http://localhost:3000"
     ],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# DB dependency
 def get_db():
     db = SessionLocal()
     try:
@@ -35,12 +30,10 @@ def get_db():
     finally:
         db.close()
 
-# Root route
 @app.get("/")
 def root():
     return {"message": "FastAPI backend is running!"}
 
-# Ping DB route
 @app.get("/ping-db")
 def ping_database(db: Session = Depends(get_db)):
     try:
@@ -49,14 +42,30 @@ def ping_database(db: Session = Depends(get_db)):
     except Exception as e:
         return {"error": str(e)}
 
-# Submit 1099-NEC
 @app.post("/submit-1099/", response_model=schemas.TaxForm1099NEC)
 def submit_1099(form: schemas.TaxForm1099NECCreate, db: Session = Depends(get_db)):
     try:
         return crud.create_1099nec(db=db, form_data=form)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-    
+
+@app.post("/submit-multiple-1099/", response_model=List[schemas.TaxForm1099NEC])
+def submit_multiple_1099(
+    forms: List[schemas.TaxForm1099NECCreate],
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    results = crud.create_multiple_1099s(db, forms, current_user.username)
+
+    payer_email = forms[0].payer_email
+    if payer_email:
+        send_confirmation_email(
+            to_email=payer_email,
+            payer_name=forms[0].payer_name,
+            count=len(forms)
+        )
+
+    return results
 
 @app.get("/submissions", response_model=List[schemas.TaxForm1099NEC])
 def get_all_submissions(
@@ -65,6 +74,18 @@ def get_all_submissions(
 ):
     return crud.get_all_1099s(db)
 
+@app.get("/submissions/recent", response_model=List[schemas.TaxForm1099NEC])
+def get_recent_submissions(
+    db: Session = Depends(get_db),
+    current_user: models.User = Depends(auth.get_current_user)
+):
+    return (
+        db.query(models.TaxForm1099NEC)
+        .filter_by(username=current_user.username)
+        .order_by(models.TaxForm1099NEC.created_at.desc())
+        .limit(5)
+        .all()
+    )
 
 @app.post("/register", response_model=schemas.UserOut)
 def register(user: schemas.UserCreate, db: Session = Depends(get_db)):

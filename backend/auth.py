@@ -1,16 +1,16 @@
-from fastapi import Depends, HTTPException, status
-from fastapi.security import OAuth2PasswordBearer
+from fastapi import Depends, HTTPException, status, Response, Request
+from fastapi.security import OAuth2PasswordBearer, OAuth2PasswordRequestForm
 from jose import jwt, JWTError
 from sqlalchemy.orm import Session
 from backend import models, schemas, security
-from backend.database import get_db  # ✅ use this for DB session
+from backend.database import get_db
+import json
 
-oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/login")
-
+# ✅ Dummy tokenUrl prevents unwanted form validation in GET routes
+oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 def get_user_by_username(db: Session, username: str):
     return db.query(models.User).filter(models.User.username == username).first()
-
 
 def create_user(db: Session, user: schemas.UserCreate):
     hashed_pw = security.hash_password(user.password)
@@ -20,13 +20,11 @@ def create_user(db: Session, user: schemas.UserCreate):
     db.refresh(new_user)
     return new_user
 
-
 def authenticate_user(db: Session, username: str, password: str):
     user = get_user_by_username(db, username)
     if not user or not security.verify_password(password, user.hashed_password):
         return None
     return user
-
 
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     credentials_exception = HTTPException(
