@@ -50,23 +50,33 @@ def submit_1099(form: schemas.TaxForm1099NECCreate, db: Session = Depends(get_db
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-@app.post("/submit-multiple-1099/", response_model=List[schemas.TaxForm1099NEC])
+from backend.email_utils import send_confirmation_email  # already imported
+
+@app.post("/submit-multiple-1099/")
 def submit_multiple_1099(
     forms: List[schemas.TaxForm1099NECCreate],
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
-    results = crud.create_multiple_1099s(db, forms, current_user.username)
+    try:
+        created_forms = []
+        for form_data in forms:
+            created = crud.create_1099nec(db=db, form_data=form_data, user_id=current_user.id)
+            created_forms.append(created)
 
-    payer_email = forms[0].payer_email
-    if payer_email:
-        send_confirmation_email(
-            to_email=payer_email,
-            payer_name=forms[0].payer_name,
-            count=len(forms)
-        )
+        # ✅ Email only if payer_email is provided
+        if forms and forms[0].payer_email:
+            send_confirmation_email(
+                to_email=forms[0].payer_email,
+                payer_name=forms[0].payer_name,
+                count=len(created_forms)
+            )
 
-    return results
+        return created_forms
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/submissions", response_model=List[schemas.TaxForm1099NEC])
 def get_all_submissions(
