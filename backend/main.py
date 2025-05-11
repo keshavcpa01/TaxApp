@@ -1,22 +1,23 @@
-from fastapi import FastAPI, Depends, HTTPException
+from fastapi import FastAPI, Depends, HTTPException, status, Query
 from fastapi.security import OAuth2PasswordRequestForm
 from fastapi.middleware.cors import CORSMiddleware
-from typing import List
 from sqlalchemy.orm import Session
 from sqlalchemy import text
-from . import auth, security, models, crud, schemas
-from .database import SessionLocal, engine, Base
-from fastapi import Query
-from .email_utils import send_confirmation_email
-from backend.models import Base
-from backend.database import engine
+from typing import List
 
-Base.metadata.drop_all(bind=engine)
+from backend import auth, security, models, crud, schemas
+from backend.database import SessionLocal, engine
+from backend.email_utils import send_confirmation_email
 
-Base.metadata.create_all(bind=engine)
+# Only run ONCE in dev. Never drop all on production.
+# models.Base.metadata.drop_all(bind=engine)  # 🔥 CAUTION: This deletes all tables
+
+# Create tables if they don’t exist
+models.Base.metadata.create_all(bind=engine)
 
 app = FastAPI()
 
+# CORS for Render + Local dev
 app.add_middleware(
     CORSMiddleware,
     allow_origins=[
@@ -28,6 +29,7 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
+# Dependency
 def get_db():
     db = SessionLocal()
     try:
@@ -47,14 +49,25 @@ def ping_database(db: Session = Depends(get_db)):
     except Exception as e:
         return {"error": str(e)}
 
-@app.post("/submit-1099/", response_model=schemas.TaxForm1099NEC)
-def submit_1099(form: schemas.TaxForm1099NECCreate, db: Session = Depends(get_db)):
-    try:
-        return crud.create_1099nec(db=db, form_data=form)
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
+@app.post("/register", response_model=schemas.UserOut)
+def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
+    return auth.create_user(db, user)
 
-from backend.email_utils import send_confirmation_email  # already imported
+@app.post("/login", response_model=schemas.Token)
+def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
+    user = auth.authenticate_user(db, form_data.username, form_data.password)
+    if not user:
+        raise HTTPException(status_code=400, detail="Incorrect username or password")
+    token = security.create_access_token(data={"sub": user.username})
+    return {"access_token": token, "token_type": "bearer"}
+
+@app.get("/users/me", response_model=schemas.UserOut)
+def read_users_me(current_user: models.User = Depends(auth.get_current_user)):
+    return current_user
+
+@app.post("/submit-1099/", response_model=schemas.TaxForm1099NEC)
+def submit_1099(form: schemas.TaxForm1099NECCreate, db: Session = Depends(get_db), current_user: models.User = Depends(auth.get_current_user)):
+    return crud.create_1099nec(db=db, form_data=form, user_id=current_user.id)
 
 @app.post("/submit-multiple-1099/")
 def submit_multiple_1099(
@@ -63,12 +76,8 @@ def submit_multiple_1099(
     current_user: models.User = Depends(auth.get_current_user)
 ):
     try:
-        created_forms = []
-        for form_data in forms:
-            created = crud.create_1099nec(db=db, form_data=form_data, user_id=current_user.id)
-            created_forms.append(created)
+        created_forms = [crud.create_1099nec(db, form_data=form, user_id=current_user.id) for form in forms]
 
-        # ✅ Email only if payer_email is provided
         if forms and forms[0].payer_email:
             send_confirmation_email(
                 to_email=forms[0].payer_email,
@@ -81,13 +90,12 @@ def submit_multiple_1099(
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 
-
 @app.get("/submissions", response_model=List[schemas.TaxForm1099NEC])
 def get_all_submissions(
     db: Session = Depends(get_db),
     current_user: models.User = Depends(auth.get_current_user)
 ):
-    return crud.get_all_1099s(db)
+    return crud.get_user_1099s(db, user_id=current_user.id)
 
 @app.get("/submissions/recent", response_model=List[schemas.TaxForm1099NEC])
 def get_recent_submissions(
@@ -96,35 +104,18 @@ def get_recent_submissions(
 ):
     return (
         db.query(models.TaxForm1099NEC)
-        .filter_by(username=current_user.username)
+        .filter(models.TaxForm1099NEC.user_id == current_user.id)
         .order_by(models.TaxForm1099NEC.created_at.desc())
         .limit(5)
         .all()
     )
 
-@app.post("/register", response_model=schemas.UserOut)
-def register(user: schemas.UserCreate, db: Session = Depends(get_db)):
-    return auth.create_user(db, user)
-
-@app.post("/login", response_model=schemas.Token)
-def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depends(get_db)):
-    print(f"Login attempt: {form_data.username}")
-    user = auth.authenticate_user(db, form_data.username, form_data.password)
-    if not user:
-        raise HTTPException(status_code=400, detail="Incorrect username or password")
-    token = security.create_access_token(data={"sub": user.username})
-    return {"access_token": token, "token_type": "bearer"}
-
-@app.get("/users/me", response_model=schemas.UserOut)
-def read_users_me(current_user: models.User = Depends(auth.get_current_user)):
-    return current_user
+@app.get("/test-email")
+def test_email(to: str = Query(...)):
+    send_confirmation_email(to_email=to, payer_name="Test Payer", count=1)
+    return {"message": f"Email sent to {to}"}
 
 @app.get("/debug-tables")
 def debug_tables(db: Session = Depends(get_db)):
     result = db.execute(text("SELECT table_name FROM information_schema.tables WHERE table_schema='public';"))
     return {"tables": [row[0] for row in result]}
-
-@app.get("/test-email")
-def test_email(to: str = Query(...)):
-    send_confirmation_email(to_email=to, payer_name="Test Payer", count=1)
-    return {"message": f"Email sent to {to}"}
