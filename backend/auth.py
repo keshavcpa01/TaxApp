@@ -22,9 +22,10 @@ def create_user(db: Session, user: schemas.UserCreate):
         db.commit()
         db.refresh(new_user)
         return new_user
-    except IntegrityError:  # ✅ must match the import
+    except IntegrityError:
         db.rollback()
         raise HTTPException(status_code=400, detail="Username already exists")
+
 
 def authenticate_user(db: Session, username: str, password: str):
     user = get_user_by_username(db, username)
