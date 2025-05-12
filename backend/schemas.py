@@ -1,6 +1,7 @@
 from pydantic import BaseModel, EmailStr
 from typing import Optional
 from decimal import Decimal
+from datetime import datetime
 
 class UserCreate(BaseModel):
     username: str
@@ -42,7 +43,8 @@ class TaxForm1099NECCreate(BaseModel):
 
 class TaxForm1099NEC(TaxForm1099NECCreate):
     id: int
-    created_at: Optional[str] = None
+    user_id: Optional[int] = None  # ✅ Add this line
+    created_at: Optional[datetime] = None  # ✅ Make sure it's datetime not str
 
     class Config:
         from_attributes = True
