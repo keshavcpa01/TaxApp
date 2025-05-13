@@ -1,11 +1,17 @@
+# backend/email_utils.py
+
 import os
 import sendgrid
-from sendgrid.helpers.mail import Mail, Email, To
+import base64
+from sendgrid.helpers.mail import (
+    Mail, Email, To,
+    Attachment, FileContent, FileName, FileType, Disposition
+)
 
 SENDGRID_API_KEY = os.getenv("SENDGRID_API_KEY")
 FROM_EMAIL = os.getenv("SENDGRID_FROM_EMAIL")
 
-def send_confirmation_email(to_email: str, payer_name: str, count: int):
+def send_confirmation_email(to_email: str, payer_name: str, count: int, attachment_path: str | None = None):
     if not SENDGRID_API_KEY or not FROM_EMAIL:
         print("⚠️ SendGrid configuration missing. Skipping email.")
         return
@@ -37,6 +43,18 @@ def send_confirmation_email(to_email: str, payer_name: str, count: int):
         subject=subject,
         html_content=html_content
     )
+
+    # Attach PDF if provided
+    if attachment_path and os.path.exists(attachment_path):
+        with open(attachment_path, 'rb') as f:
+            encoded_file = base64.b64encode(f.read()).decode()
+        attachment = Attachment(
+            file_content=FileContent(encoded_file),
+            file_type=FileType('application/pdf'),
+            file_name=FileName('1099-confirmation.pdf'),
+            disposition=Disposition('attachment'),
+        )
+        message.attachment = attachment
 
     try:
         response = sg.send(message)

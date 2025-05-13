@@ -4,6 +4,10 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from typing import List
+from backend.pdf_utils import generate_1099_pdf
+import tempfile
+import os
+from backend.email_utils import send_email_with_attachment
 
 from backend import auth, security, models, crud, schemas
 from backend.database import SessionLocal, engine
@@ -81,16 +85,24 @@ def submit_multiple_1099(
         created_forms = [crud.create_1099nec(db, form_data=form, user_id=current_user.id) for form in forms]
 
         if forms and forms[0].payer_email:
-            send_confirmation_email(
-                to_email=forms[0].payer_email,
-                payer_name=forms[0].payer_name,
-                count=len(created_forms)
-            )
+            # Save PDF to temp file
+            with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_pdf:
+                generate_1099_pdf([form.dict() for form in forms], temp_pdf.name)
+
+                # Send email with attachment
+                send_email_with_attachment(
+                    to_email=forms[0].payer_email,
+                    subject="Your 1099-NEC Confirmation",
+                    content="Please find attached your 1099 submission confirmation.",
+                    attachment_path=temp_pdf.name
+                )
+
+                os.unlink(temp_pdf.name)  # Clean up
 
         return created_forms
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
+
 
 @app.get("/submissions", response_model=List[schemas.TaxForm1099NEC])
 def get_all_submissions(
@@ -121,3 +133,41 @@ def test_email(to: str = Query(...)):
 def debug_tables(db: Session = Depends(get_db)):
     result = db.execute(text("SELECT table_name FROM information_schema.tables WHERE table_schema='public';"))
     return {"tables": [row[0] for row in result]}
+
+@app.get("/test-email-pdf")
+def test_email_with_pdf(
+    to: str = Query(..., description="Email address to send confirmation"),
+):
+    # Sample 1099 data (mocked)
+    fake_data = [{
+        "payer_name": "Test Payer",
+        "payer_tin": "12-3456789",
+        "payer_address": "123 Test Ave",
+        "recipient_name": "John Doe",
+        "recipient_tin": "987-65-4321",
+        "recipient_address": "456 Sample St",
+        "nonemployee_compensation": 5500.00,
+        "federal_income_tax_withheld": 300.00,
+        "state": "IL",
+        "state_id": "IL12345",
+        "state_income": 5500.00,
+    }]
+
+    # Generate and send PDF
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_pdf:
+            generate_1099_pdf(fake_data, temp_pdf.name)
+
+            send_confirmation_email(
+                to_email=to,
+                payer_name="Test Payer",
+                count=1,
+                attachment_path=temp_pdf.name
+            )
+
+            os.unlink(temp_pdf.name)
+
+        return {"message": f"📧 Test email sent to {to}"}
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
