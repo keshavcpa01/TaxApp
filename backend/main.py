@@ -139,44 +139,6 @@ def debug_tables(db: Session = Depends(get_db)):
 def test_email_with_pdf(
     to: str = Query(..., description="Email address to send confirmation"),
 ):
-    # Sample 1099 data (mocked)
-    fake_data = [{
-        "payer_name": "Test Payer",
-        "payer_tin": "12-3456789",
-        "payer_address": "123 Test Ave",
-        "recipient_name": "John Doe",
-        "recipient_tin": "987-65-4321",
-        "recipient_address": "456 Sample St",
-        "nonemployee_compensation": 5500.00,
-        "federal_income_tax_withheld": 300.00,
-        "state": "IL",
-        "state_id": "IL12345",
-        "state_income": 5500.00,
-    }]
-
-    # Generate and send PDF
-    try:
-        with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_pdf:
-            generate_1099_pdf(fake_data, temp_pdf.name)
-
-            send_confirmation_email(
-                to_email=to,
-                payer_name="Test Payer",
-                count=1,
-                attachment_path=temp_pdf.name
-            )
-
-            os.unlink(temp_pdf.name)
-
-        return {"message": f"📧 Test email sent to {to}"}
-
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-    
-    @app.get("/test-email-pdf")
-def test_email_with_pdf(
-    to: str = Query(..., description="Email address to send confirmation"),
-):
     from backend.pdf_utils import generate_1099_pdf
     from backend.email_utils import send_confirmation_email
     import tempfile, os
