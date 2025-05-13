@@ -58,8 +58,10 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     user = auth.authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
-    token = security.create_access_token(data={"sub": user.username})
+    
+    token = security.create_access_token(data={"sub": str(user.id)})  # ✅ Fixed here
     return {"access_token": token, "token_type": "bearer"}
+
 
 @app.get("/users/me", response_model=schemas.UserOut)
 def read_users_me(current_user: models.User = Depends(auth.get_current_user)):
@@ -106,7 +108,7 @@ def get_recent_submissions(
         db.query(models.TaxForm1099NEC)
         .filter(models.TaxForm1099NEC.user_id == current_user.id)
         .order_by(models.TaxForm1099NEC.created_at.desc())
-        .limit(5)
+        .limit(1)
         .all()
     )
 

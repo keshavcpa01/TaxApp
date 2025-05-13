@@ -9,11 +9,11 @@ interface TaxForm1099 {
   recipient_name: string;
   recipient_tin: string;
   recipient_address: string;
-  nonemployee_compensation: number;
-  federal_income_tax_withheld: number;
+  nonemployee_compensation: number | string;
+  federal_income_tax_withheld: number | string;
   state: string;
   state_id: string;
-  state_income: number;
+  state_income: number | string;
 }
 
 const SubmissionsTable: React.FC = () => {
@@ -93,10 +93,10 @@ const SubmissionsTable: React.FC = () => {
               <td className="border px-2">{r.payer_tin}</td>
               <td className="border px-2">{r.recipient_name}</td>
               <td className="border px-2">{r.recipient_tin}</td>
-              <td className="border px-2">${r.nonemployee_compensation.toFixed(2)}</td>
-              <td className="border px-2">${r.federal_income_tax_withheld.toFixed(2)}</td>
+              <td className="border px-2">${Number(r.nonemployee_compensation).toFixed(2)}</td>
+              <td className="border px-2">${Number(r.federal_income_tax_withheld).toFixed(2)}</td>
               <td className="border px-2">{r.state}</td>
-              <td className="border px-2">${r.state_income.toFixed(2)}</td>
+              <td className="border px-2">${Number(r.state_income).toFixed(2)}</td>
             </tr>
           ))}
         </tbody>
