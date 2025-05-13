@@ -7,7 +7,8 @@ from typing import List
 from backend.pdf_utils import generate_1099_pdf
 import tempfile
 import os
-from backend.email_utils import send_email_with_attachment
+from backend.email_utils import send_confirmation_email
+
 
 from backend import auth, security, models, crud, schemas
 from backend.database import SessionLocal, engine
@@ -90,11 +91,11 @@ def submit_multiple_1099(
                 generate_1099_pdf([form.dict() for form in forms], temp_pdf.name)
 
                 # Send email with attachment
-                send_email_with_attachment(
-                    to_email=forms[0].payer_email,
-                    subject="Your 1099-NEC Confirmation",
-                    content="Please find attached your 1099 submission confirmation.",
-                    attachment_path=temp_pdf.name
+                send_confirmation_email(
+                to_email=forms[0].payer_email,
+                payer_name=forms[0].payer_name,
+                count=len(created_forms),
+                attachment_path=temp_pdf.name
                 )
 
                 os.unlink(temp_pdf.name)  # Clean up
