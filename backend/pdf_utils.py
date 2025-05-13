@@ -1,5 +1,3 @@
-# backend/pdf_utils.py
-
 from weasyprint import HTML
 from jinja2 import Template
 from typing import List
