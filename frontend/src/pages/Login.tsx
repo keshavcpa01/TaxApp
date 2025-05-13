@@ -1,41 +1,75 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { useForm } from 'react-hook-form';
 import axios from 'axios';
+import { toast } from 'react-toastify';
+
+interface LoginFormInputs {
+  username: string;
+  password: string;
+}
 
 interface LoginProps {
   onLogin: () => void;
 }
 
 const Login: React.FC<LoginProps> = ({ onLogin }) => {
-  const [username, setUsername] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const {
+    register,
+    handleSubmit,
+    formState: { errors },
+  } = useForm<LoginFormInputs>();
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-
+  const onSubmit = async (data: LoginFormInputs) => {
     try {
-      const res = await axios.post(`${process.env.REACT_APP_API_BASE_URL}/login`, new URLSearchParams({
-        username,
-        password
-      }));
-
-      localStorage.setItem('token', res.data.access_token);
+      const response = await axios.post(
+        `${process.env.REACT_APP_API_BASE_URL}/login`,
+        data
+      );
+      localStorage.setItem('token', response.data.access_token);
+      toast.success('Login successful!');
       onLogin();
     } catch (err: any) {
-      setError('Invalid credentials');
+      toast.error('Login failed. Please check your credentials.');
     }
   };
 
-  // ✅ Make sure this return is present and not accidentally removed
   return (
-    <div className="p-4 max-w-md mx-auto">
-      <h2 className="text-xl font-bold mb-4">🔐 Login</h2>
-      <form onSubmit={handleSubmit} className="grid gap-3">
-        <input value={username} onChange={e => setUsername(e.target.value)} placeholder="Username" required />
-        <input type="password" value={password} onChange={e => setPassword(e.target.value)} placeholder="Password" required />
-        <button type="submit" className="bg-blue-600 text-white py-2 rounded">Login</button>
-        {error && <p className="text-red-500">{error}</p>}
+    <div className="min-h-screen flex items-center justify-center bg-gray-100">
+      <form
+        onSubmit={handleSubmit(onSubmit)}
+        className="bg-white p-8 rounded shadow-md w-full max-w-sm"
+      >
+        <h2 className="text-2xl font-semibold mb-6 text-center">Login</h2>
+
+        <div className="mb-4">
+          <label className="block mb-1 font-medium">Username</label>
+          <input
+            {...register('username', { required: 'Username is required' })}
+            className="w-full border rounded px-3 py-2"
+          />
+          {errors.username && (
+            <p className="text-red-500 text-sm">{errors.username.message}</p>
+          )}
+        </div>
+
+        <div className="mb-4">
+          <label className="block mb-1 font-medium">Password</label>
+          <input
+            type="password"
+            {...register('password', { required: 'Password is required' })}
+            className="w-full border rounded px-3 py-2"
+          />
+          {errors.password && (
+            <p className="text-red-500 text-sm">{errors.password.message}</p>
+          )}
+        </div>
+
+        <button
+          type="submit"
+          className="w-full bg-blue-600 text-white py-2 rounded hover:bg-blue-700 transition"
+        >
+          Login
+        </button>
       </form>
     </div>
   );

@@ -82,7 +82,7 @@ def submit_multiple_1099(
 
         if forms and forms[0].payer_email:
             with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_pdf:
-                generate_1099_pdf([form.dict() for form in forms], temp_pdf.name)
+                generate_1099_pdf([form.model_dump()() for form in forms], temp_pdf.name)
 
                 send_confirmation_email(
                     to_email=forms[0].payer_email,

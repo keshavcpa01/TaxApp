@@ -1,3 +1,4 @@
+// src/App.tsx
 import React from 'react';
 import { HashRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import TaxForm from './components/TaxForm';
@@ -8,34 +9,25 @@ import Confirmation from './pages/Confirmation';
 import { ToastContainer } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
-const App: React.FC = () => {
+function App() {
   const token = localStorage.getItem('token');
-
-  const requireAuth = (element: JSX.Element) =>
-    token ? element : <Navigate to="/login" />;
 
   return (
     <>
       <Router>
         <Routes>
-          <Route path="/" element={<Navigate to={token ? "/submissions" : "/login"} />} />
-          <Route
-            path="/login"
-            element={
-              <Login onLogin={() => (window.location.href = '#/submissions')} />
-            }
-          />
+          <Route path="/" element={token ? <Navigate to="/submissions" /> : <Navigate to="/login" />} />
+          <Route path="/login" element={<Login onLogin={() => (window.location.href = '/submissions')} />} />
           <Route path="/register" element={<Register />} />
-          <Route path="/tax-form" element={requireAuth(<TaxForm />)} />
-          <Route path="/submit" element={requireAuth(<TaxForm />)} />
-          <Route path="/submissions" element={requireAuth(<SubmissionsTable />)} />
-          <Route path="/confirmation" element={requireAuth(<Confirmation />)} />
+          <Route path="/tax-form" element={token ? <TaxForm /> : <Navigate to="/login" />} />
+          <Route path="/submissions" element={token ? <SubmissionsTable /> : <Navigate to="/login" />} />
+          <Route path="/confirmation" element={token ? <Confirmation /> : <Navigate to="/login" />} />
           <Route path="*" element={<Navigate to="/" />} />
         </Routes>
       </Router>
       <ToastContainer position="top-right" autoClose={3000} />
     </>
   );
-};
+}
 
 export default App;
