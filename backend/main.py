@@ -7,6 +7,7 @@ from typing import List
 from backend.pdf_utils import generate_1099_pdf
 import tempfile
 import os
+from fastapi import Query
 from backend.email_utils import send_confirmation_email
 
 
@@ -171,6 +172,5 @@ def test_email_with_pdf(
             os.unlink(temp_pdf.name)
 
         return {"message": f"📧 Test email sent to {to}"}
-
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
