@@ -4,16 +4,12 @@ from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy.orm import Session
 from sqlalchemy import text
 from typing import List
-from backend.pdf_utils import generate_1099_pdf
-import tempfile
-import os
-from fastapi import Query
-from backend.email_utils import send_confirmation_email
-
-
 from backend import auth, security, models, crud, schemas
 from backend.database import SessionLocal, engine
 from backend.email_utils import send_confirmation_email
+from backend.pdf_utils import generate_1099_pdf
+import tempfile
+import os
 
 # Only run ONCE in dev. Never drop all on production.
 # models.Base.metadata.drop_all(bind=engine)  # 🔥 CAUTION: This deletes all tables
@@ -64,10 +60,8 @@ def login(form_data: OAuth2PasswordRequestForm = Depends(), db: Session = Depend
     user = auth.authenticate_user(db, form_data.username, form_data.password)
     if not user:
         raise HTTPException(status_code=400, detail="Incorrect username or password")
-    
-    token = security.create_access_token(data={"sub": str(user.id)})  # ✅ Fixed here
+    token = security.create_access_token(data={"sub": str(user.id)})
     return {"access_token": token, "token_type": "bearer"}
-
 
 @app.get("/users/me", response_model=schemas.UserOut)
 def read_users_me(current_user: models.User = Depends(auth.get_current_user)):
@@ -87,24 +81,21 @@ def submit_multiple_1099(
         created_forms = [crud.create_1099nec(db, form_data=form, user_id=current_user.id) for form in forms]
 
         if forms and forms[0].payer_email:
-            # Save PDF to temp file
             with tempfile.NamedTemporaryFile(delete=False, suffix=".pdf") as temp_pdf:
                 generate_1099_pdf([form.dict() for form in forms], temp_pdf.name)
 
-                # Send email with attachment
                 send_confirmation_email(
-                to_email=forms[0].payer_email,
-                payer_name=forms[0].payer_name,
-                count=len(created_forms),
-                attachment_path=temp_pdf.name
+                    to_email=forms[0].payer_email,
+                    payer_name=forms[0].payer_name,
+                    count=len(created_forms),
+                    attachment_path=temp_pdf.name
                 )
 
-                os.unlink(temp_pdf.name)  # Clean up
+                os.unlink(temp_pdf.name)
 
         return created_forms
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
-
 
 @app.get("/submissions", response_model=List[schemas.TaxForm1099NEC])
 def get_all_submissions(
@@ -126,11 +117,6 @@ def get_recent_submissions(
         .all()
     )
 
-@app.get("/test-email")
-def test_email(to: str = Query(...)):
-    send_confirmation_email(to_email=to, payer_name="Test Payer", count=1)
-    return {"message": f"Email sent to {to}"}
-
 @app.get("/debug-tables")
 def debug_tables(db: Session = Depends(get_db)):
     result = db.execute(text("SELECT table_name FROM information_schema.tables WHERE table_schema='public';"))
@@ -140,10 +126,6 @@ def debug_tables(db: Session = Depends(get_db)):
 def test_email_with_pdf(
     to: str = Query(..., description="Email address to send confirmation"),
 ):
-    from backend.pdf_utils import generate_1099_pdf
-    from backend.email_utils import send_confirmation_email
-    import tempfile, os
-
     fake_data = [{
         "payer_name": "Test Payer",
         "payer_tin": "12-3456789",
