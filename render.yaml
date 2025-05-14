@@ -6,15 +6,14 @@ services:
     buildCommand: pip install -r backend/requirements.txt
     startCommand: uvicorn backend.main:app --host 0.0.0.0 --port 10000
     envVars:
-      - key: DATABASE_URL
-        value: postgresql://fast_api_zter_v2_user:DKvIpQO6doQu01wzxRLTGYjnkpT7wpc1@dpg-d0htpjq4d50c73at9k5g-a.ohio-postgres.render.com/fast_api_zter_v2
-        sync: false
-      - key: SECRET_KEY
-        value: OXwiRw-iXre_u-AgGS8CpSzurskingc4Nt7PSFMpVccfJupm7aMa9caC-hxJDg9gm72ccZzrr5UynhJkfzhzgQ
-      - key: SENDGRID_API_KEY
-        value: SG.tvSD0kqtRKiGUNajstYeJg.55P-uKfjUAdavhVUvws70A4DI79aS8GWlH3e7z6TlS4EY
-      - key: SENDGRID_FROM_EMAIL
-        value: saritaweb@gmail.com
+  - key: DATABASE_URL
+    sync: false   # ✅ Keep this to sync from Render dashboard
+  - key: SECRET_KEY
+    sync: false
+  - key: SENDGRID_API_KEY
+    sync: false
+  - key: SENDGRID_FROM_EMAIL
+    value: saritaweb@gmail.com   # ✅ This one is not sensitive
     plan: free
     autoDeploy: true
 
